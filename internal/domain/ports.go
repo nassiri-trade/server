@@ -30,4 +30,5 @@ type TradeRepository interface {
 type UserRepository interface {
 	UpsertUser(ctx context.Context, user User) error
 	GetUser(ctx context.Context, userID string) (User, error)
+	GetUserByLogin(ctx context.Context, login string) (User, error)
 }

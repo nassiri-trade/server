@@ -78,6 +78,60 @@
                 }
             }
         },
+        "/trading-data": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "trading"
+                ],
+                "summary": "Handle trading data (positions or history)",
+                "parameters": [
+                    {
+                        "description": "Trading data payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/http.TradingDataRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/users/{user_id}/positions": {
             "post": {
                 "consumes": [
@@ -296,8 +350,7 @@
             "type": "object",
             "properties": {
                 "balance": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "time": {
                     "type": "string"
@@ -308,20 +361,16 @@
             "type": "object",
             "properties": {
                 "averageExposureTime": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "averageLeverage": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "exposureRatio": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "maxExposureTime": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 }
             }
         },
@@ -351,64 +400,49 @@
             "type": "object",
             "properties": {
                 "averageDownsideRisk": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "calmarRatio": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "conditionalVaR95": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "downsideDeviation": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "kurtosis": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "maxDrawdown": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "maxDrawdownPercent": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "recoveryFactor": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "sharpeRatio": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "skewness": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "sortinoRatio": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "stability": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "ulcerIndex": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "valueAtRisk95": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "volatility": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 }
             }
         },
@@ -416,53 +450,43 @@
             "type": "object",
             "properties": {
                 "averageDurationSec": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "averageLoss": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "averageRMultiple": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "averageWin": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "bestTrade": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "expectancy": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "losingTrades": {
                     "type": "integer"
                 },
                 "payoffRatio": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "profitFactor": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "totalTrades": {
                     "type": "integer"
                 },
                 "winRate": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "winningTrades": {
                     "type": "integer"
                 },
                 "worstTrade": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 }
             }
         },
@@ -506,22 +530,19 @@
                     }
                 },
                 "realizedProfit": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "riskMetrics": {
                     "$ref": "#/definitions/domain.RiskMetrics"
                 },
                 "totalReturnPercent": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "tradeMetrics": {
                     "$ref": "#/definitions/domain.TradeMetrics"
                 },
                 "unrealizedProfit": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "userID": {
                     "type": "string"
@@ -538,8 +559,7 @@
                     "type": "string"
                 },
                 "balance": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "brokerName": {
                     "type": "string"
@@ -554,8 +574,7 @@
                     "type": "string"
                 },
                 "entryPrice": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "entryTime": {
                     "type": "string"
@@ -564,29 +583,25 @@
                     "type": "string"
                 },
                 "magic": {
-                    "type": "integer",
-                    "format": "int64"
+                    "type": "integer"
                 },
                 "platform": {
                     "type": "string"
                 },
                 "profit": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "rawPayload": {
                     "type": "array",
                     "items": {
-                        "type": "integer",
-                        "format": "int32"
+                        "type": "integer"
                     }
                 },
                 "reason": {
                     "type": "string"
                 },
                 "riskPercent": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "side": {
                     "$ref": "#/definitions/domain.PositionSide"
@@ -595,31 +610,25 @@
                     "$ref": "#/definitions/domain.PositionStatus"
                 },
                 "stopLoss": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "symbol": {
                     "type": "string"
                 },
                 "takeProfit": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "tickSize": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "tickValue": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "ticket": {
-                    "type": "integer",
-                    "format": "int64"
+                    "type": "integer"
                 },
                 "unrealizedPL": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "updatedAt": {
                     "type": "string"
@@ -628,8 +637,7 @@
                     "type": "string"
                 },
                 "volume": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 }
             }
         },
@@ -643,8 +651,7 @@
                     "type": "string"
                 },
                 "entryPrice": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "entryTime": {
                     "type": "string"
@@ -653,59 +660,49 @@
                     "type": "string"
                 },
                 "magic": {
-                    "type": "integer",
-                    "format": "int64"
+                    "type": "integer"
                 },
                 "platform": {
                     "type": "string"
                 },
                 "positionTicket": {
-                    "type": "integer",
-                    "format": "int64"
+                    "type": "integer"
                 },
                 "profit": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "rawPayload": {
                     "type": "array",
                     "items": {
-                        "type": "integer",
-                        "format": "int32"
+                        "type": "integer"
                     }
                 },
                 "reason": {
                     "type": "string"
                 },
                 "riskPercent": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "side": {
                     "type": "string"
                 },
                 "stopLoss": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "symbol": {
                     "type": "string"
                 },
                 "takeProfit": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "tickSize": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "tickValue": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 },
                 "ticket": {
-                    "type": "integer",
-                    "format": "int64"
+                    "type": "integer"
                 },
                 "updatedAt": {
                     "type": "string"
@@ -714,8 +711,7 @@
                     "type": "string"
                 },
                 "volume": {
-                    "type": "number",
-                    "format": "float64"
+                    "type": "number"
                 }
             }
         },
@@ -801,6 +797,97 @@
                 },
                 "volume": {
                     "type": "number"
+                }
+            }
+        },
+        "http.TradingDataPosition": {
+            "type": "object",
+            "properties": {
+                "comment": {
+                    "type": "string"
+                },
+                "entry": {
+                    "type": "number"
+                },
+                "entryTime": {
+                    "type": "string"
+                },
+                "magic": {
+                    "type": "integer"
+                },
+                "profit": {
+                    "type": "number"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "riskPercent": {
+                    "type": "number"
+                },
+                "side": {
+                    "type": "string"
+                },
+                "sl": {
+                    "type": "number"
+                },
+                "symbol": {
+                    "type": "string"
+                },
+                "tickSize": {
+                    "type": "number"
+                },
+                "tickValue": {
+                    "type": "number"
+                },
+                "ticket": {
+                    "type": "integer"
+                },
+                "tp": {
+                    "type": "number"
+                },
+                "volume": {
+                    "type": "number"
+                }
+            }
+        },
+        "http.TradingDataRequest": {
+            "type": "object",
+            "properties": {
+                "balance": {
+                    "type": "number"
+                },
+                "broker": {
+                    "type": "string"
+                },
+                "deals": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/http.TradeRequest"
+                    }
+                },
+                "login": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "platform": {
+                    "type": "string"
+                },
+                "position": {
+                    "$ref": "#/definitions/http.TradingDataPosition"
+                },
+                "server": {
+                    "type": "string"
+                },
+                "time": {
+                    "type": "string"
+                },
+                "timeGMT": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
                 }
             }
         },

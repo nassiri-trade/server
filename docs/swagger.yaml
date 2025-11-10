@@ -28,7 +28,6 @@ definitions:
   domain.EquityPoint:
     properties:
       balance:
-        format: float64
         type: number
       time:
         type: string
@@ -36,16 +35,12 @@ definitions:
   domain.ExposureMetrics:
     properties:
       averageExposureTime:
-        format: float64
         type: number
       averageLeverage:
-        format: float64
         type: number
       exposureRatio:
-        format: float64
         type: number
       maxExposureTime:
-        format: float64
         type: number
     type: object
   domain.PositionSide:
@@ -67,88 +62,63 @@ definitions:
   domain.RiskMetrics:
     properties:
       averageDownsideRisk:
-        format: float64
         type: number
       calmarRatio:
-        format: float64
         type: number
       conditionalVaR95:
-        format: float64
         type: number
       downsideDeviation:
-        format: float64
         type: number
       kurtosis:
-        format: float64
         type: number
       maxDrawdown:
-        format: float64
         type: number
       maxDrawdownPercent:
-        format: float64
         type: number
       recoveryFactor:
-        format: float64
         type: number
       sharpeRatio:
-        format: float64
         type: number
       skewness:
-        format: float64
         type: number
       sortinoRatio:
-        format: float64
         type: number
       stability:
-        format: float64
         type: number
       ulcerIndex:
-        format: float64
         type: number
       valueAtRisk95:
-        format: float64
         type: number
       volatility:
-        format: float64
         type: number
     type: object
   domain.TradeMetrics:
     properties:
       averageDurationSec:
-        format: float64
         type: number
       averageLoss:
-        format: float64
         type: number
       averageRMultiple:
-        format: float64
         type: number
       averageWin:
-        format: float64
         type: number
       bestTrade:
-        format: float64
         type: number
       expectancy:
-        format: float64
         type: number
       losingTrades:
         type: integer
       payoffRatio:
-        format: float64
         type: number
       profitFactor:
-        format: float64
         type: number
       totalTrades:
         type: integer
       winRate:
-        format: float64
         type: number
       winningTrades:
         type: integer
       worstTrade:
-        format: float64
         type: number
     type: object
   domain.UserPerformanceReport:
@@ -178,17 +148,14 @@ definitions:
           $ref: '#/definitions/domain.UserPositionSnapshot'
         type: array
       realizedProfit:
-        format: float64
         type: number
       riskMetrics:
         $ref: '#/definitions/domain.RiskMetrics'
       totalReturnPercent:
-        format: float64
         type: number
       tradeMetrics:
         $ref: '#/definitions/domain.TradeMetrics'
       unrealizedProfit:
-        format: float64
         type: number
       userID:
         type: string
@@ -200,7 +167,6 @@ definitions:
       accountName:
         type: string
       balance:
-        format: float64
         type: number
       brokerName:
         type: string
@@ -211,60 +177,48 @@ definitions:
       createdAt:
         type: string
       entryPrice:
-        format: float64
         type: number
       entryTime:
         type: string
       lastUpdate:
         type: string
       magic:
-        format: int64
         type: integer
       platform:
         type: string
       profit:
-        format: float64
         type: number
       rawPayload:
         items:
-          format: int32
           type: integer
         type: array
       reason:
         type: string
       riskPercent:
-        format: float64
         type: number
       side:
         $ref: '#/definitions/domain.PositionSide'
       status:
         $ref: '#/definitions/domain.PositionStatus'
       stopLoss:
-        format: float64
         type: number
       symbol:
         type: string
       takeProfit:
-        format: float64
         type: number
       tickSize:
-        format: float64
         type: number
       tickValue:
-        format: float64
         type: number
       ticket:
-        format: int64
         type: integer
       unrealizedPL:
-        format: float64
         type: number
       updatedAt:
         type: string
       userID:
         type: string
       volume:
-        format: float64
         type: number
     type: object
   domain.UserTrade:
@@ -274,58 +228,46 @@ definitions:
       createdAt:
         type: string
       entryPrice:
-        format: float64
         type: number
       entryTime:
         type: string
       entryType:
         type: string
       magic:
-        format: int64
         type: integer
       platform:
         type: string
       positionTicket:
-        format: int64
         type: integer
       profit:
-        format: float64
         type: number
       rawPayload:
         items:
-          format: int32
           type: integer
         type: array
       reason:
         type: string
       riskPercent:
-        format: float64
         type: number
       side:
         type: string
       stopLoss:
-        format: float64
         type: number
       symbol:
         type: string
       takeProfit:
-        format: float64
         type: number
       tickSize:
-        format: float64
         type: number
       tickValue:
-        format: float64
         type: number
       ticket:
-        format: int64
         type: integer
       updatedAt:
         type: string
       userID:
         type: string
       volume:
-        format: float64
         type: number
     type: object
   http.PositionRequest:
@@ -383,6 +325,66 @@ definitions:
         type: number
       volume:
         type: number
+    type: object
+  http.TradingDataPosition:
+    properties:
+      comment:
+        type: string
+      entry:
+        type: number
+      entryTime:
+        type: string
+      magic:
+        type: integer
+      profit:
+        type: number
+      reason:
+        type: string
+      riskPercent:
+        type: number
+      side:
+        type: string
+      sl:
+        type: number
+      symbol:
+        type: string
+      tickSize:
+        type: number
+      tickValue:
+        type: number
+      ticket:
+        type: integer
+      tp:
+        type: number
+      volume:
+        type: number
+    type: object
+  http.TradingDataRequest:
+    properties:
+      balance:
+        type: number
+      broker:
+        type: string
+      deals:
+        items:
+          $ref: '#/definitions/http.TradeRequest'
+        type: array
+      login:
+        type: string
+      name:
+        type: string
+      platform:
+        type: string
+      position:
+        $ref: '#/definitions/http.TradingDataPosition'
+      server:
+        type: string
+      time:
+        type: string
+      timeGMT:
+        type: string
+      type:
+        type: string
     type: object
   http.positionPayload:
     properties:
@@ -469,6 +471,41 @@ paths:
       summary: Trigger a calendar sync
       tags:
       - calendar
+  /trading-data:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Trading data payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/http.TradingDataRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Handle trading data (positions or history)
+      tags:
+      - trading
   /users/{user_id}/positions:
     post:
       consumes:

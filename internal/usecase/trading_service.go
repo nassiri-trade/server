@@ -5,6 +5,8 @@ import (
 	"errors"
 	"math"
 	"sort"
+	"strconv"
+	"strings"
 	"time"
 
 	"trading_server/internal/domain"
@@ -28,6 +30,123 @@ func NewTradingService(positionRepo domain.PositionRepository, tradeRepo domain.
 		tradeRepo:    tradeRepo,
 		userRepo:     userRepo,
 	}, nil
+}
+
+func (s *TradingService) ProcessTradingDataByLogin(ctx context.Context, login string, dataType string, positionData map[string]any, dealsData []map[string]any, commonData map[string]any, rawPayload []byte) error {
+	if s.userRepo == nil {
+		return errors.New("user repository required")
+	}
+
+	// Try to get existing user by login
+	user, err := s.userRepo.GetUserByLogin(ctx, login)
+	if err != nil && !errors.Is(err, errors.New("record not found")) {
+		// If error is not "record not found", return it
+		// For "record not found", we'll create a new user below
+	}
+
+	// If user doesn't exist, create a user_id from login
+	userID := user.UserID
+	if userID == "" {
+		// Generate user_id from login + platform
+		platform := ""
+		if p, ok := commonData["platform"].(string); ok {
+			platform = p
+		}
+		userID = login
+		if platform != "" {
+			userID = platform + "_" + login
+		}
+	}
+
+	// Process based on type
+	if dataType == "Open" && positionData != nil {
+		position := s.buildPositionFromData(userID, positionData, commonData, rawPayload)
+		if err := s.ensureUserFromPosition(ctx, position); err != nil {
+			return err
+		}
+		return s.positionRepo.UpsertPosition(ctx, position)
+	} else if dataType == "History" && len(dealsData) > 0 {
+		// Process each deal
+		for _, dealData := range dealsData {
+			trade := s.buildTradeFromData(userID, dealData, commonData, rawPayload)
+			if err := s.ensureUserFromTrade(ctx, trade); err != nil {
+				return err
+			}
+			if err := s.tradeRepo.AddTrade(ctx, trade); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	return errors.New("invalid data type or missing data")
+}
+
+func (s *TradingService) buildPositionFromData(userID string, positionData map[string]any, commonData map[string]any, raw []byte) domain.UserPosition {
+	ticket := toInt64(positionData["ticket"])
+	entryTime := parseTime(positionData["entryTime"], time.RFC3339, "2006.01.02 15:04", "2006.01.02 15:04:05")
+	lastUpdate := parseTime(commonData["time"], "2006.01.02 15:04:05", "2006.01.02 15:04", time.RFC3339)
+
+	return domain.UserPosition{
+		UserID:       userID,
+		Ticket:       ticket,
+		Platform:     toString(commonData["platform"]),
+		AccountName:  toString(commonData["name"]),
+		AccountLogin: toString(commonData["login"]),
+		BrokerServer: toString(commonData["server"]),
+		BrokerName:   toString(commonData["broker"]),
+		Balance:      toFloat(commonData["balance"]),
+		Status:       domain.PositionStatusOpen,
+		Symbol:       toString(positionData["symbol"]),
+		Side:         domain.PositionSide(toString(positionData["side"])),
+		Volume:       toFloat(positionData["volume"]),
+		EntryTime:    entryTime,
+		EntryPrice:   toFloat(positionData["entry"]),
+		StopLoss:     toFloat(positionData["sl"]),
+		TakeProfit:   toFloat(positionData["tp"]),
+		Profit:       toFloat(positionData["profit"]),
+		RiskPercent:  toFloat(positionData["riskPercent"]),
+		TickValue:    toFloat(positionData["tickValue"]),
+		TickSize:     toFloat(positionData["tickSize"]),
+		Magic:        toInt64(positionData["magic"]),
+		Reason:       toString(positionData["reason"]),
+		Comment:      toString(positionData["comment"]),
+		LastUpdate:   lastUpdate,
+		RawPayload:   raw,
+	}
+}
+
+func (s *TradingService) buildTradeFromData(userID string, dealData map[string]any, commonData map[string]any, raw []byte) domain.UserTrade {
+	ticket := toInt64(dealData["ticket"])
+	entryTime := parseTime(dealData["entryTime"], "2006.01.02 15:04:05", "2006.01.02 15:04", time.RFC3339)
+
+	var positionTicket *int64
+	if pt := toInt64(dealData["pid"]); pt != 0 {
+		positionTicket = &pt
+	}
+
+	return domain.UserTrade{
+		UserID:         userID,
+		Ticket:         ticket,
+		PositionTicket: positionTicket,
+		Platform:       toString(commonData["platform"]),
+		Symbol:         toString(dealData["symbol"]),
+		Side:           domain.TradeSide(toString(dealData["side"])),
+		EntryType:      domain.TradeEntryType(toString(dealData["entryType"])),
+		Volume:         toFloat(dealData["volume"]),
+		EntryTime:      entryTime,
+		EntryPrice:     toFloat(dealData["entry"]),
+		StopLoss:       toFloat(dealData["sl"]),
+		TakeProfit:     toFloat(dealData["tp"]),
+		Profit:         toFloat(dealData["profit"]),
+		RiskPercent:    toFloat(dealData["riskPercent"]),
+		TickValue:      toFloat(dealData["tickValue"]),
+		TickSize:       toFloat(dealData["tickSize"]),
+		Magic:          toInt64(dealData["magic"]),
+		Reason:         toString(dealData["reason"]),
+		Comment:        toString(dealData["comment"]),
+		RawPayload:     raw,
+	}
 }
 
 func (s *TradingService) UpsertPosition(ctx context.Context, position domain.UserPosition) error {
@@ -529,4 +648,79 @@ func maxFloat(values []float64) float64 {
 		}
 	}
 	return max
+}
+
+func toFloat(v any) float64 {
+	switch val := v.(type) {
+	case float64:
+		return val
+	case float32:
+		return float64(val)
+	case int:
+		return float64(val)
+	case int64:
+		return float64(val)
+	case string:
+		// Try parsing string to float
+		if f, err := strconv.ParseFloat(val, 64); err == nil {
+			return f
+		}
+		return 0
+	default:
+		return 0
+	}
+}
+
+func toInt64(v any) int64 {
+	switch val := v.(type) {
+	case float64:
+		return int64(val)
+	case float32:
+		return int64(val)
+	case int:
+		return int64(val)
+	case int64:
+		return val
+	case string:
+		// Try parsing string to int
+		if i, err := strconv.ParseInt(val, 10, 64); err == nil {
+			return i
+		}
+		return 0
+	default:
+		return 0
+	}
+}
+
+func toString(v any) string {
+	switch val := v.(type) {
+	case string:
+		return val
+	default:
+		return ""
+	}
+}
+
+func parseTime(value any, layouts ...string) time.Time {
+	raw := toString(value)
+	if raw == "" {
+		return time.Time{}
+	}
+	for _, layout := range layouts {
+		if layout == "" {
+			continue
+		}
+		if t, err := time.Parse(layout, raw); err == nil {
+			return t
+		}
+		// Try normalizing dots to dashes
+		if strings.Contains(raw, ".") {
+			normalized := strings.ReplaceAll(raw, ".", "-")
+			normalizedLayout := strings.ReplaceAll(layout, ".", "-")
+			if t, err := time.Parse(normalizedLayout, normalized); err == nil {
+				return t
+			}
+		}
+	}
+	return time.Time{}
 }

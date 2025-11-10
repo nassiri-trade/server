@@ -159,8 +159,8 @@ func (m UserPositionModel) toDomain() domain.UserPosition {
 
 type UserTradeModel struct {
 	ID             int64          `gorm:"column:id"`
-	UserID         string         `gorm:"column:user_id;not null"`
-	Ticket         int64          `gorm:"column:ticket;not null"`
+	UserID         string         `gorm:"column:user_id;not null;uniqueIndex:idx_user_ticket"`
+	Ticket         int64          `gorm:"column:ticket;not null;uniqueIndex:idx_user_ticket"`
 	PositionTicket *int64         `gorm:"column:position_ticket"`
 	Platform       *string        `gorm:"column:platform"`
 	Symbol         *string        `gorm:"column:symbol"`

@@ -32,7 +32,7 @@ func (r *GormUserRepository) UpsertUser(ctx context.Context, user domain.User) e
 		"server":     gorm.Expr("COALESCE(EXCLUDED.server, users.server)"),
 		"broker":     gorm.Expr("COALESCE(EXCLUDED.broker, users.broker)"),
 		"metadata":   gorm.Expr("COALESCE(EXCLUDED.metadata, users.metadata)"),
-		"last_seen":  gorm.Expr("GREATEST(EXCLUDED.last_seen, users.last_seen)"),
+		"last_seen":  gorm.Expr("MAX(EXCLUDED.last_seen, users.last_seen)"),
 		"updated_at": gorm.Expr("CURRENT_TIMESTAMP"),
 	})
 
@@ -48,6 +48,21 @@ func (r *GormUserRepository) GetUser(ctx context.Context, userID string) (domain
 	var model UserModel
 	err := r.db.WithContext(ctx).
 		Where("user_id = ?", userID).
+		First(&model).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return domain.User{}, err
+		}
+		return domain.User{}, err
+	}
+
+	return model.toDomain(), nil
+}
+
+func (r *GormUserRepository) GetUserByLogin(ctx context.Context, login string) (domain.User, error) {
+	var model UserModel
+	err := r.db.WithContext(ctx).
+		Where("login = ?", login).
 		First(&model).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
