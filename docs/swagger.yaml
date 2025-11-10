@@ -121,6 +121,31 @@ definitions:
       worstTrade:
         type: number
     type: object
+  domain.User:
+    properties:
+      broker:
+        type: string
+      created:
+        type: string
+      lastSeen:
+        type: string
+      login:
+        type: string
+      metadata:
+        items:
+          type: integer
+        type: array
+      name:
+        type: string
+      platform:
+        type: string
+      server:
+        type: string
+      updated:
+        type: string
+      userID:
+        type: string
+    type: object
   domain.UserPerformanceReport:
     properties:
       asOf:
@@ -384,6 +409,8 @@ definitions:
       timeGMT:
         type: string
       type:
+        description: Type indicates payload category. Use "History" for historical
+          trades; any other value is treated as a live position snapshot.
         type: string
     type: object
   http.positionPayload:
@@ -433,6 +460,16 @@ paths:
         in: query
         name: limit
         type: integer
+      - description: Filter events with event_date greater than or equal to this ISO8601
+          timestamp
+        in: query
+        name: date_from
+        type: string
+      - description: Filter events with event_date less than or equal to this ISO8601
+          timestamp
+        in: query
+        name: date_to
+        type: string
       produces:
       - application/json
       responses:
@@ -442,6 +479,12 @@ paths:
             items:
               $ref: '#/definitions/domain.CalendarEvent'
             type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "500":
           description: Internal Server Error
           schema:
@@ -506,6 +549,31 @@ paths:
       summary: Handle trading data (positions or history)
       tags:
       - trading
+  /users:
+    get:
+      parameters:
+      - description: Maximum number of users
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.User'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List users
+      tags:
+      - users
   /users/{user_id}/positions:
     post:
       consumes:

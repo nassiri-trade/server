@@ -31,6 +31,18 @@ const docTemplate = `{
                         "description": "Maximum number of events",
                         "name": "limit",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter events with event_date greater than or equal to this ISO8601 timestamp",
+                        "name": "date_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter events with event_date less than or equal to this ISO8601 timestamp",
+                        "name": "date_to",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -40,6 +52,15 @@ const docTemplate = `{
                             "type": "array",
                             "items": {
                                 "$ref": "#/definitions/domain.CalendarEvent"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
                             }
                         }
                     },
@@ -125,6 +146,45 @@ const docTemplate = `{
                             "type": "object",
                             "additionalProperties": {
                                 "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "List users",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Maximum number of users",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.User"
                             }
                         }
                     },
@@ -495,6 +555,44 @@ const docTemplate = `{
                 },
                 "worstTrade": {
                     "type": "number"
+                }
+            }
+        },
+        "domain.User": {
+            "type": "object",
+            "properties": {
+                "broker": {
+                    "type": "string"
+                },
+                "created": {
+                    "type": "string"
+                },
+                "lastSeen": {
+                    "type": "string"
+                },
+                "login": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "platform": {
+                    "type": "string"
+                },
+                "server": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "userID": {
+                    "type": "string"
                 }
             }
         },
@@ -895,6 +993,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "type": {
+                    "description": "Type indicates payload category. Use \"History\" for historical trades; any other value is treated as a live position snapshot.",
                     "type": "string"
                 }
             }

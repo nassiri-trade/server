@@ -45,3 +45,8 @@ func (e CalendarEvent) WithHash() CalendarEvent {
 	return e
 }
 
+type ListEventsOptions struct {
+	Limit int
+	From  *time.Time
+	To    *time.Time
+}

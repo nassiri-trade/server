@@ -37,6 +37,8 @@ func (s *TradingService) ProcessTradingDataByLogin(ctx context.Context, login st
 		return errors.New("user repository required")
 	}
 
+	normalizedType := strings.ToLower(strings.TrimSpace(dataType))
+
 	// Try to get existing user by login
 	user, err := s.userRepo.GetUserByLogin(ctx, login)
 	if err != nil && !errors.Is(err, errors.New("record not found")) {
@@ -44,7 +46,7 @@ func (s *TradingService) ProcessTradingDataByLogin(ctx context.Context, login st
 		// For "record not found", we'll create a new user below
 	}
 
-	// If user doesn't exist, create a user_id from login
+	// If user doesn't exist, create a user_id from login + platform
 	userID := user.UserID
 	if userID == "" {
 		// Generate user_id from login + platform
@@ -58,15 +60,12 @@ func (s *TradingService) ProcessTradingDataByLogin(ctx context.Context, login st
 		}
 	}
 
-	// Process based on type
-	if dataType == "Open" && positionData != nil {
-		position := s.buildPositionFromData(userID, positionData, commonData, rawPayload)
-		if err := s.ensureUserFromPosition(ctx, position); err != nil {
-			return err
+	switch normalizedType {
+	case "history":
+		if len(dealsData) == 0 {
+			return errors.New("deals data required for history payloads")
 		}
-		return s.positionRepo.UpsertPosition(ctx, position)
-	} else if dataType == "History" && len(dealsData) > 0 {
-		// Process each deal
+
 		for _, dealData := range dealsData {
 			trade := s.buildTradeFromData(userID, dealData, commonData, rawPayload)
 			if err := s.ensureUserFromTrade(ctx, trade); err != nil {
@@ -77,9 +76,17 @@ func (s *TradingService) ProcessTradingDataByLogin(ctx context.Context, login st
 			}
 		}
 		return nil
-	}
+	default:
+		if positionData == nil {
+			return errors.New("position data required for live payloads")
+		}
 
-	return errors.New("invalid data type or missing data")
+		position := s.buildPositionFromData(userID, positionData, commonData, rawPayload)
+		if err := s.ensureUserFromPosition(ctx, position); err != nil {
+			return err
+		}
+		return s.positionRepo.InsertPositionSnapshot(ctx, position)
+	}
 }
 
 func (s *TradingService) buildPositionFromData(userID string, positionData map[string]any, commonData map[string]any, raw []byte) domain.UserPosition {
@@ -229,6 +236,16 @@ func (s *TradingService) GenerateReport(ctx context.Context, userID string, limi
 	report.DerivedInsights = buildInsights(tradeMetrics, riskMetrics, exposure)
 
 	return report, nil
+}
+
+func (s *TradingService) ListUsers(ctx context.Context, limit int) ([]domain.User, error) {
+	if s.userRepo == nil {
+		return nil, errors.New("user repository required")
+	}
+	if limit <= 0 {
+		limit = 100
+	}
+	return s.userRepo.ListUsers(ctx, limit)
 }
 
 func enrichOpenPositions(positions []domain.UserPosition) []domain.UserPositionSnapshot {

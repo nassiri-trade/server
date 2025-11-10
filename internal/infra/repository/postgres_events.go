@@ -52,12 +52,20 @@ func (r *GormEventRepository) UpsertEvents(ctx context.Context, events []domain.
 		Create(&models).Error
 }
 
-func (r *GormEventRepository) ListEvents(ctx context.Context, limit int) ([]domain.CalendarEvent, error) {
+func (r *GormEventRepository) ListEvents(ctx context.Context, opts domain.ListEventsOptions) ([]domain.CalendarEvent, error) {
 	var models []CalendarEventModel
+
 	query := r.db.WithContext(ctx).Order("event_date DESC")
-	if limit > 0 {
-		query = query.Limit(limit)
+	if opts.From != nil {
+		query = query.Where("event_date >= ?", opts.From)
 	}
+	if opts.To != nil {
+		query = query.Where("event_date <= ?", opts.To)
+	}
+	if opts.Limit > 0 {
+		query = query.Limit(opts.Limit)
+	}
+
 	if err := query.Find(&models).Error; err != nil {
 		return nil, fmt.Errorf("list events: %w", err)
 	}

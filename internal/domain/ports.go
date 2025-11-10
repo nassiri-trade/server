@@ -13,11 +13,12 @@ type EventFeed interface {
 // EventRepository persists calendar events.
 type EventRepository interface {
 	UpsertEvents(ctx context.Context, events []CalendarEvent) error
-	ListEvents(ctx context.Context, limit int) ([]CalendarEvent, error)
+	ListEvents(ctx context.Context, opts ListEventsOptions) ([]CalendarEvent, error)
 }
 
 type PositionRepository interface {
 	UpsertPosition(ctx context.Context, position UserPosition) error
+	InsertPositionSnapshot(ctx context.Context, position UserPosition) error
 	ClosePosition(ctx context.Context, ticket int64, closeTime time.Time, profit float64) error
 	ListOpenPositions(ctx context.Context, userID string) ([]UserPosition, error)
 }
@@ -31,4 +32,5 @@ type UserRepository interface {
 	UpsertUser(ctx context.Context, user User) error
 	GetUser(ctx context.Context, userID string) (User, error)
 	GetUserByLogin(ctx context.Context, login string) (User, error)
+	ListUsers(ctx context.Context, limit int) ([]User, error)
 }

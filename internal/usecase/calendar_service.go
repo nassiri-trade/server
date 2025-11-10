@@ -56,10 +56,10 @@ func (s *CalendarService) Sync(ctx context.Context) (int, error) {
 	return len(collated), nil
 }
 
-func (s *CalendarService) List(ctx context.Context, limit int) ([]domain.CalendarEvent, error) {
-	if limit <= 0 {
-		limit = 100
+func (s *CalendarService) List(ctx context.Context, opts domain.ListEventsOptions) ([]domain.CalendarEvent, error) {
+	if opts.Limit <= 0 {
+		opts.Limit = 100
 	}
 
-	return s.repo.ListEvents(ctx, limit)
+	return s.repo.ListEvents(ctx, opts)
 }

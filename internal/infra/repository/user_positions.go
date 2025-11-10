@@ -90,3 +90,8 @@ func (r *GormPositionRepository) ListOpenPositions(ctx context.Context, userID s
 
 	return positions, nil
 }
+
+func (r *GormPositionRepository) InsertPositionSnapshot(ctx context.Context, position domain.UserPosition) error {
+	model := toUserPositionSnapshotModel(position)
+	return r.db.WithContext(ctx).Create(&model).Error
+}

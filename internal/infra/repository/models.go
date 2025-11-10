@@ -285,6 +285,70 @@ func (m UserModel) toDomain() domain.User {
 	}
 }
 
+type UserPositionSnapshotModel struct {
+	ID           int64          `gorm:"column:id"`
+	UserID       string         `gorm:"column:user_id;not null"`
+	Ticket       int64          `gorm:"column:ticket"`
+	Platform     *string        `gorm:"column:platform"`
+	AccountName  *string        `gorm:"column:account_name"`
+	AccountLogin *string        `gorm:"column:account_login"`
+	BrokerServer *string        `gorm:"column:broker_server"`
+	BrokerName   *string        `gorm:"column:broker_name"`
+	Balance      float64        `gorm:"column:balance"`
+	Status       string         `gorm:"column:status"`
+	Symbol       *string        `gorm:"column:symbol"`
+	Side         *string        `gorm:"column:side"`
+	Volume       float64        `gorm:"column:volume"`
+	EntryTime    time.Time      `gorm:"column:entry_time"`
+	EntryPrice   float64        `gorm:"column:entry_price"`
+	StopLoss     float64        `gorm:"column:stop_loss"`
+	TakeProfit   float64        `gorm:"column:take_profit"`
+	Profit       float64        `gorm:"column:profit"`
+	RiskPercent  float64        `gorm:"column:risk_percent"`
+	TickValue    float64        `gorm:"column:tick_value"`
+	TickSize     float64        `gorm:"column:tick_size"`
+	Magic        int64          `gorm:"column:magic"`
+	Reason       *string        `gorm:"column:reason"`
+	Comment      *string        `gorm:"column:comment"`
+	LastUpdate   time.Time      `gorm:"column:last_update"`
+	RawPayload   datatypes.JSON `gorm:"column:raw_payload;type:jsonb"`
+	CreatedAt    time.Time      `gorm:"column:created_at"`
+}
+
+func (UserPositionSnapshotModel) TableName() string {
+	return "user_position_snapshots"
+}
+
+func toUserPositionSnapshotModel(position domain.UserPosition) UserPositionSnapshotModel {
+	return UserPositionSnapshotModel{
+		UserID:       position.UserID,
+		Ticket:       position.Ticket,
+		Platform:     stringPointerOrNil(position.Platform),
+		AccountName:  stringPointerOrNil(position.AccountName),
+		AccountLogin: stringPointerOrNil(position.AccountLogin),
+		BrokerServer: stringPointerOrNil(position.BrokerServer),
+		BrokerName:   stringPointerOrNil(position.BrokerName),
+		Balance:      position.Balance,
+		Status:       string(position.Status),
+		Symbol:       stringPointerOrNil(position.Symbol),
+		Side:         stringPointerOrNil(string(position.Side)),
+		Volume:       position.Volume,
+		EntryTime:    position.EntryTime,
+		EntryPrice:   position.EntryPrice,
+		StopLoss:     position.StopLoss,
+		TakeProfit:   position.TakeProfit,
+		Profit:       position.Profit,
+		RiskPercent:  position.RiskPercent,
+		TickValue:    position.TickValue,
+		TickSize:     position.TickSize,
+		Magic:        position.Magic,
+		Reason:       stringPointerOrNil(position.Reason),
+		Comment:      stringPointerOrNil(position.Comment),
+		LastUpdate:   position.LastUpdate,
+		RawPayload:   jsonOrEmpty(position.RawPayload),
+	}
+}
+
 func stringPointerOrNil(value string) *string {
 	if value == "" {
 		return nil

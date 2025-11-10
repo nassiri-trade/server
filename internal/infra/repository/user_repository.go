@@ -73,3 +73,23 @@ func (r *GormUserRepository) GetUserByLogin(ctx context.Context, login string) (
 
 	return model.toDomain(), nil
 }
+
+func (r *GormUserRepository) ListUsers(ctx context.Context, limit int) ([]domain.User, error) {
+	var models []UserModel
+
+	query := r.db.WithContext(ctx).Order("created_at DESC")
+	if limit > 0 {
+		query = query.Limit(limit)
+	}
+
+	if err := query.Find(&models).Error; err != nil {
+		return nil, err
+	}
+
+	users := make([]domain.User, len(models))
+	for i, model := range models {
+		users[i] = model.toDomain()
+	}
+
+	return users, nil
+}

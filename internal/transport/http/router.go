@@ -18,7 +18,7 @@ import (
 
 type CalendarService interface {
 	Sync(ctx context.Context) (int, error)
-	List(ctx context.Context, limit int) ([]domain.CalendarEvent, error)
+	List(ctx context.Context, opts domain.ListEventsOptions) ([]domain.CalendarEvent, error)
 }
 
 type TradingService interface {
@@ -26,6 +26,7 @@ type TradingService interface {
 	RecordTrade(ctx context.Context, trade domain.UserTrade) error
 	GenerateReport(ctx context.Context, userID string, limit int) (domain.UserPerformanceReport, error)
 	ProcessTradingDataByLogin(ctx context.Context, login string, dataType string, positionData map[string]any, dealsData []map[string]any, commonData map[string]any, rawPayload []byte) error
+	ListUsers(ctx context.Context, limit int) ([]domain.User, error)
 }
 
 type Router struct {
@@ -48,8 +49,9 @@ func New(calendar CalendarService, trading TradingService) *Router {
 
 	v1.Get("/events", r.listEvents)
 	v1.Post("/events/sync", r.syncEvents)
-
+	v1.Get("/users", r.listUsers)
 	v1.Post("/users/:user_id/positions", r.upsertPosition)
+
 	v1.Post("/users/:user_id/trades", r.recordTrade)
 	v1.Get("/users/:user_id/report", r.getUserReport)
 
@@ -74,7 +76,10 @@ func (r *Router) App() *fiber.App {
 // @Tags calendar
 // @Produce json
 // @Param limit query int false "Maximum number of events"
+// @Param date_from query string false "Filter events with event_date greater than or equal to this ISO8601 timestamp"
+// @Param date_to query string false "Filter events with event_date less than or equal to this ISO8601 timestamp"
 // @Success 200 {array} domain.CalendarEvent
+// @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /events [get]
 func (r *Router) listEvents(c *fiber.Ctx) error {
@@ -89,10 +94,30 @@ func (r *Router) listEvents(c *fiber.Ctx) error {
 		}
 	}
 
+	opts := domain.ListEventsOptions{Limit: limit}
+
+	if fromStr := c.Query("date_from"); fromStr != "" {
+		from := parseTime(fromStr, time.RFC3339, "2006-01-02T15:04:05", "2006-01-02 15:04:05", "2006-01-02")
+		if from.IsZero() {
+			return fiber.NewError(fiber.StatusBadRequest, "invalid date_from")
+		}
+		fromCopy := from
+		opts.From = &fromCopy
+	}
+
+	if toStr := c.Query("date_to"); toStr != "" {
+		to := parseTime(toStr, time.RFC3339, "2006-01-02T15:04:05", "2006-01-02 15:04:05", "2006-01-02")
+		if to.IsZero() {
+			return fiber.NewError(fiber.StatusBadRequest, "invalid date_to")
+		}
+		toCopy := to
+		opts.To = &toCopy
+	}
+
 	ctx, cancel := context.WithTimeout(userContext(c), 5*time.Second)
 	defer cancel()
 
-	events, err := r.calendarService.List(ctx, limit)
+	events, err := r.calendarService.List(ctx, opts)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
@@ -205,15 +230,16 @@ type TradingDataPosition struct {
 }
 
 type TradingDataRequest struct {
-	Platform string               `json:"platform"`
-	Name     string               `json:"name"`
-	Login    string               `json:"login"`
-	Server   string               `json:"server"`
-	Broker   string               `json:"broker"`
-	Time     string               `json:"time"`
-	TimeGMT  string               `json:"timeGMT"`
-	Balance  float64              `json:"balance"`
-	Type     string               `json:"type" enum:"Open,History"`
+	Platform string  `json:"platform"`
+	Name     string  `json:"name"`
+	Login    string  `json:"login"`
+	Server   string  `json:"server"`
+	Broker   string  `json:"broker"`
+	Time     string  `json:"time"`
+	TimeGMT  string  `json:"timeGMT"`
+	Balance  float64 `json:"balance"`
+	// Type indicates payload category. Use "History" for historical trades; any other value is treated as a live position snapshot.
+	Type     string               `json:"type"`
 	Position *TradingDataPosition `json:"position,omitempty"`
 	Deals    []TradeRequest       `json:"deals,omitempty"`
 }
@@ -370,22 +396,23 @@ func (r *Router) handleTradingData(c *fiber.Ctx) error {
 	// Extract type from payload
 	dataType := toString(payload["type"])
 	if dataType == "" {
-		return fiber.NewError(fiber.StatusBadRequest, "type required (Open or History)")
+		return fiber.NewError(fiber.StatusBadRequest, "type required")
 	}
+	normalizedType := strings.ToLower(strings.TrimSpace(dataType))
 
-	// Extract position data if type is "Open"
+	// Extract position data for non-history types
 	var positionData map[string]any
-	if dataType == "Open" {
+	if normalizedType != "history" {
 		if pos, ok := payload["position"].(map[string]any); ok {
 			positionData = pos
 		} else {
-			return fiber.NewError(fiber.StatusBadRequest, "position data required for Open type")
+			return fiber.NewError(fiber.StatusBadRequest, "position data required for live payloads")
 		}
 	}
 
 	// Extract deals data if type is "History"
 	var dealsData []map[string]any
-	if dataType == "History" {
+	if normalizedType == "history" {
 		if deals, ok := payload["deals"].([]any); ok {
 			for _, deal := range deals {
 				if dealMap, ok := deal.(map[string]any); ok {
@@ -394,18 +421,49 @@ func (r *Router) handleTradingData(c *fiber.Ctx) error {
 			}
 		}
 		if len(dealsData) == 0 {
-			return fiber.NewError(fiber.StatusBadRequest, "deals data required for History type")
+			return fiber.NewError(fiber.StatusBadRequest, "deals data required for history payloads")
 		}
 	}
 
 	ctx, cancel := context.WithTimeout(userContext(c), 10*time.Second)
 	defer cancel()
 
-	if err := r.tradingService.ProcessTradingDataByLogin(ctx, login, dataType, positionData, dealsData, payload, raw); err != nil {
+	if err := r.tradingService.ProcessTradingDataByLogin(ctx, login, normalizedType, positionData, dealsData, payload, raw); err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"status": "ok"})
+}
+
+// listUsers godoc
+// @Summary List users
+// @Tags users
+// @Produce json
+// @Param limit query int false "Maximum number of users"
+// @Success 200 {array} domain.User
+// @Failure 500 {object} map[string]string
+// @Router /users [get]
+func (r *Router) listUsers(c *fiber.Ctx) error {
+	if r.tradingService == nil {
+		return fiber.NewError(fiber.StatusServiceUnavailable, "trading service unavailable")
+	}
+
+	limit := 100
+	if v := c.Query("limit"); v != "" {
+		if parsed, err := strconv.Atoi(v); err == nil && parsed > 0 {
+			limit = parsed
+		}
+	}
+
+	ctx, cancel := context.WithTimeout(userContext(c), 5*time.Second)
+	defer cancel()
+
+	users, err := r.tradingService.ListUsers(ctx, limit)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(users)
 }
 
 func decodePositionPayload(userID string, payload map[string]any, raw []byte) (domain.UserPosition, error) {

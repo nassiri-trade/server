@@ -18,6 +18,7 @@ func ApplyMigrations(ctx context.Context, db *gorm.DB, _ string) error {
 		&repository.CalendarEventModel{},
 		&repository.UserModel{},
 		&repository.UserPositionModel{},
+		&repository.UserPositionSnapshotModel{},
 		&repository.UserTradeModel{},
 	); err != nil {
 		return fmt.Errorf("auto migrate: %w", err)
