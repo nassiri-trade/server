@@ -1,0 +1,16 @@
+services:
+  app:
+    image: armansal/forex-factory-server:v1.0.0
+    environment:
+      SERVER_PORT: "3000"
+      DATABASE_DSN: /app/data/forex.db
+      CALENDAR_FEED_URL: https://nfs.faireconomy.media/ff_calendar_thisweek.json
+      SCHEDULER_INTERVAL: 1h
+    ports:
+      - "3000:3000"
+    volumes:
+      - sqlite_data:/app/data
+
+volumes:
+  sqlite_data:
+

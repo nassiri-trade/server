@@ -1,0 +1,586 @@
+basePath: /api/v1
+definitions:
+  domain.CalendarEvent:
+    properties:
+      actual:
+        type: string
+      createdAt:
+        type: string
+      currency:
+        type: string
+      date:
+        type: string
+      detail:
+        type: string
+      forecast:
+        type: string
+      hash:
+        type: string
+      impact:
+        type: string
+      previous:
+        type: string
+      sourceURL:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  domain.EquityPoint:
+    properties:
+      balance:
+        format: float64
+        type: number
+      time:
+        type: string
+    type: object
+  domain.ExposureMetrics:
+    properties:
+      averageExposureTime:
+        format: float64
+        type: number
+      averageLeverage:
+        format: float64
+        type: number
+      exposureRatio:
+        format: float64
+        type: number
+      maxExposureTime:
+        format: float64
+        type: number
+    type: object
+  domain.PositionSide:
+    enum:
+    - DEAL_TYPE_BUY
+    - DEAL_TYPE_SELL
+    type: string
+    x-enum-varnames:
+    - PositionSideBuy
+    - PositionSideSell
+  domain.PositionStatus:
+    enum:
+    - open
+    - closed
+    type: string
+    x-enum-varnames:
+    - PositionStatusOpen
+    - PositionStatusClosed
+  domain.RiskMetrics:
+    properties:
+      averageDownsideRisk:
+        format: float64
+        type: number
+      calmarRatio:
+        format: float64
+        type: number
+      conditionalVaR95:
+        format: float64
+        type: number
+      downsideDeviation:
+        format: float64
+        type: number
+      kurtosis:
+        format: float64
+        type: number
+      maxDrawdown:
+        format: float64
+        type: number
+      maxDrawdownPercent:
+        format: float64
+        type: number
+      recoveryFactor:
+        format: float64
+        type: number
+      sharpeRatio:
+        format: float64
+        type: number
+      skewness:
+        format: float64
+        type: number
+      sortinoRatio:
+        format: float64
+        type: number
+      stability:
+        format: float64
+        type: number
+      ulcerIndex:
+        format: float64
+        type: number
+      valueAtRisk95:
+        format: float64
+        type: number
+      volatility:
+        format: float64
+        type: number
+    type: object
+  domain.TradeMetrics:
+    properties:
+      averageDurationSec:
+        format: float64
+        type: number
+      averageLoss:
+        format: float64
+        type: number
+      averageRMultiple:
+        format: float64
+        type: number
+      averageWin:
+        format: float64
+        type: number
+      bestTrade:
+        format: float64
+        type: number
+      expectancy:
+        format: float64
+        type: number
+      losingTrades:
+        type: integer
+      payoffRatio:
+        format: float64
+        type: number
+      profitFactor:
+        format: float64
+        type: number
+      totalTrades:
+        type: integer
+      winRate:
+        format: float64
+        type: number
+      winningTrades:
+        type: integer
+      worstTrade:
+        format: float64
+        type: number
+    type: object
+  domain.UserPerformanceReport:
+    properties:
+      asOf:
+        type: string
+      balanceCurve:
+        items:
+          $ref: '#/definitions/domain.EquityPoint'
+        type: array
+      closedPositions:
+        items:
+          $ref: '#/definitions/domain.UserTrade'
+        type: array
+      derivedInsights:
+        items:
+          type: string
+        type: array
+      equityCurve:
+        items:
+          $ref: '#/definitions/domain.EquityPoint'
+        type: array
+      exposureMetrics:
+        $ref: '#/definitions/domain.ExposureMetrics'
+      openPositions:
+        items:
+          $ref: '#/definitions/domain.UserPositionSnapshot'
+        type: array
+      realizedProfit:
+        format: float64
+        type: number
+      riskMetrics:
+        $ref: '#/definitions/domain.RiskMetrics'
+      totalReturnPercent:
+        format: float64
+        type: number
+      tradeMetrics:
+        $ref: '#/definitions/domain.TradeMetrics'
+      unrealizedProfit:
+        format: float64
+        type: number
+      userID:
+        type: string
+    type: object
+  domain.UserPositionSnapshot:
+    properties:
+      accountLogin:
+        type: string
+      accountName:
+        type: string
+      balance:
+        format: float64
+        type: number
+      brokerName:
+        type: string
+      brokerServer:
+        type: string
+      comment:
+        type: string
+      createdAt:
+        type: string
+      entryPrice:
+        format: float64
+        type: number
+      entryTime:
+        type: string
+      lastUpdate:
+        type: string
+      magic:
+        format: int64
+        type: integer
+      platform:
+        type: string
+      profit:
+        format: float64
+        type: number
+      rawPayload:
+        items:
+          format: int32
+          type: integer
+        type: array
+      reason:
+        type: string
+      riskPercent:
+        format: float64
+        type: number
+      side:
+        $ref: '#/definitions/domain.PositionSide'
+      status:
+        $ref: '#/definitions/domain.PositionStatus'
+      stopLoss:
+        format: float64
+        type: number
+      symbol:
+        type: string
+      takeProfit:
+        format: float64
+        type: number
+      tickSize:
+        format: float64
+        type: number
+      tickValue:
+        format: float64
+        type: number
+      ticket:
+        format: int64
+        type: integer
+      unrealizedPL:
+        format: float64
+        type: number
+      updatedAt:
+        type: string
+      userID:
+        type: string
+      volume:
+        format: float64
+        type: number
+    type: object
+  domain.UserTrade:
+    properties:
+      comment:
+        type: string
+      createdAt:
+        type: string
+      entryPrice:
+        format: float64
+        type: number
+      entryTime:
+        type: string
+      entryType:
+        type: string
+      magic:
+        format: int64
+        type: integer
+      platform:
+        type: string
+      positionTicket:
+        format: int64
+        type: integer
+      profit:
+        format: float64
+        type: number
+      rawPayload:
+        items:
+          format: int32
+          type: integer
+        type: array
+      reason:
+        type: string
+      riskPercent:
+        format: float64
+        type: number
+      side:
+        type: string
+      stopLoss:
+        format: float64
+        type: number
+      symbol:
+        type: string
+      takeProfit:
+        format: float64
+        type: number
+      tickSize:
+        format: float64
+        type: number
+      tickValue:
+        format: float64
+        type: number
+      ticket:
+        format: int64
+        type: integer
+      updatedAt:
+        type: string
+      userID:
+        type: string
+      volume:
+        format: float64
+        type: number
+    type: object
+  http.PositionRequest:
+    properties:
+      balance:
+        type: number
+      broker:
+        type: string
+      login:
+        type: string
+      name:
+        type: string
+      platform:
+        type: string
+      position:
+        $ref: '#/definitions/http.positionPayload'
+      server:
+        type: string
+      time:
+        type: string
+    type: object
+  http.TradeRequest:
+    properties:
+      comment:
+        type: string
+      entry:
+        type: number
+      entryTime:
+        type: string
+      entryType:
+        type: string
+      magic:
+        type: integer
+      pid:
+        type: integer
+      profit:
+        type: number
+      reason:
+        type: string
+      riskPercent:
+        type: number
+      side:
+        type: string
+      sl:
+        type: number
+      symbol:
+        type: string
+      tickSize:
+        type: number
+      tickValue:
+        type: number
+      ticket:
+        type: integer
+      tp:
+        type: number
+      volume:
+        type: number
+    type: object
+  http.positionPayload:
+    properties:
+      comment:
+        type: string
+      entry:
+        type: number
+      entryTime:
+        type: string
+      magic:
+        type: integer
+      profit:
+        type: number
+      reason:
+        type: string
+      riskPercent:
+        type: number
+      side:
+        type: string
+      sl:
+        type: number
+      symbol:
+        type: string
+      tickSize:
+        type: number
+      tickValue:
+        type: number
+      ticket:
+        type: integer
+      tp:
+        type: number
+      volume:
+        type: number
+    type: object
+info:
+  contact: {}
+  description: API for ForexFactory calendar data, live positions, trade history,
+    and analytics.
+  title: Forex Trading Server API
+  version: "1.0"
+paths:
+  /events:
+    get:
+      parameters:
+      - description: Maximum number of events
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.CalendarEvent'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List calendar events
+      tags:
+      - calendar
+  /events/sync:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: integer
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Trigger a calendar sync
+      tags:
+      - calendar
+  /users/{user_id}/positions:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - description: Position payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/http.PositionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Upsert a live position snapshot
+      tags:
+      - trading
+  /users/{user_id}/report:
+    get:
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - description: Maximum history window
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.UserPerformanceReport'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Generate a performance report for a user
+      tags:
+      - trading
+  /users/{user_id}/trades:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - description: Trade payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/http.TradeRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Record a trade history entry
+      tags:
+      - trading
+swagger: "2.0"
