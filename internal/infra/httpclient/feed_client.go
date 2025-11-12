@@ -69,8 +69,11 @@ func (f *ForexFactoryFeed) FetchEvents(ctx context.Context) ([]domain.CalendarEv
 			continue
 		}
 
+		// Convert from Eastern Time (or any timezone) to UTC
+		tsUTC := ts.UTC()
+
 		ev := domain.CalendarEvent{
-			Date:      ts,
+			Date:      tsUTC,
 			Currency:  strings.TrimSpace(item.Country),
 			Impact:    strings.TrimSpace(item.Impact),
 			Detail:    strings.TrimSpace(item.Title),
@@ -85,4 +88,3 @@ func (f *ForexFactoryFeed) FetchEvents(ctx context.Context) ([]domain.CalendarEv
 
 	return events, nil
 }
-
