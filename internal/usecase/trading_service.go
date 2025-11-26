@@ -39,26 +39,8 @@ func (s *TradingService) ProcessTradingDataByLogin(ctx context.Context, login st
 
 	normalizedType := strings.ToLower(strings.TrimSpace(dataType))
 
-	// Try to get existing user by login
-	user, err := s.userRepo.GetUserByLogin(ctx, login)
-	if err != nil && !errors.Is(err, errors.New("record not found")) {
-		// If error is not "record not found", return it
-		// For "record not found", we'll create a new user below
-	}
-
-	// If user doesn't exist, create a user_id from login + platform
-	userID := user.UserID
-	if userID == "" {
-		// Generate user_id from login + platform
-		platform := ""
-		if p, ok := commonData["platform"].(string); ok {
-			platform = p
-		}
-		userID = login
-		if platform != "" {
-			userID = platform + "_" + login
-		}
-	}
+	// Use login directly as userID for consistency
+	userID := login
 
 	switch normalizedType {
 	case "history":
@@ -66,11 +48,13 @@ func (s *TradingService) ProcessTradingDataByLogin(ctx context.Context, login st
 			return errors.New("deals data required for history payloads")
 		}
 
+		// Ensure user exists with full account details from commonData
+		if err := s.ensureUserFromCommonData(ctx, userID, commonData, rawPayload); err != nil {
+			return err
+		}
+
 		for _, dealData := range dealsData {
 			trade := s.buildTradeFromData(userID, dealData, commonData, rawPayload)
-			if err := s.ensureUserFromTrade(ctx, trade); err != nil {
-				return err
-			}
 			if err := s.tradeRepo.AddTrade(ctx, trade); err != nil {
 				return err
 			}
@@ -85,6 +69,11 @@ func (s *TradingService) ProcessTradingDataByLogin(ctx context.Context, login st
 		if err := s.ensureUserFromPosition(ctx, position); err != nil {
 			return err
 		}
+		// Use UpsertPosition to track live positions for reporting
+		if err := s.positionRepo.UpsertPosition(ctx, position); err != nil {
+			return err
+		}
+		// Also insert snapshot for historical tracking
 		return s.positionRepo.InsertPositionSnapshot(ctx, position)
 	}
 }
@@ -248,6 +237,15 @@ func (s *TradingService) ListUsers(ctx context.Context, limit int) ([]domain.Use
 	return s.userRepo.ListUsers(ctx, limit)
 }
 
+func (s *TradingService) GenerateReportByLogin(ctx context.Context, login string, limit int) (domain.UserPerformanceReport, error) {
+	if s.userRepo == nil {
+		return domain.UserPerformanceReport{}, errors.New("user repository required")
+	}
+
+	// Use login directly as userID (since we now store login as userID)
+	return s.GenerateReport(ctx, login, limit)
+}
+
 func enrichOpenPositions(positions []domain.UserPosition) []domain.UserPositionSnapshot {
 	out := make([]domain.UserPositionSnapshot, 0, len(positions))
 	for _, p := range positions {
@@ -301,6 +299,29 @@ func (s *TradingService) ensureUserFromTrade(ctx context.Context, trade domain.U
 	return s.userRepo.UpsertUser(ctx, user)
 }
 
+func (s *TradingService) ensureUserFromCommonData(ctx context.Context, userID string, commonData map[string]any, rawPayload []byte) error {
+	if s.userRepo == nil || userID == "" {
+		return nil
+	}
+
+	lastSeen := parseTime(commonData["time"], "2006.01.02 15:04:05", "2006.01.02 15:04", time.RFC3339)
+	if lastSeen.IsZero() {
+		lastSeen = time.Now().UTC()
+	}
+
+	user := domain.User{
+		UserID:   userID,
+		Platform: toString(commonData["platform"]),
+		Name:     toString(commonData["name"]),
+		Login:    toString(commonData["login"]),
+		Server:   toString(commonData["server"]),
+		Broker:   toString(commonData["broker"]),
+		Metadata: rawPayload,
+		LastSeen: lastSeen,
+	}
+	return s.userRepo.UpsertUser(ctx, user)
+}
+
 func computeTradeMetrics(trades []domain.UserTrade) domain.TradeMetrics {
 	if len(trades) == 0 {
 		return domain.TradeMetrics{}
@@ -308,8 +329,9 @@ func computeTradeMetrics(trades []domain.UserTrade) domain.TradeMetrics {
 
 	var winCount, lossCount int
 	var sumWin, sumLoss, best, worst float64
-	best = math.Inf(-1)
-	worst = math.Inf(1)
+	best = 0
+	worst = 0
+	firstTrade := true
 	var totalDuration float64
 
 	for _, trade := range trades {
@@ -321,12 +343,13 @@ func computeTradeMetrics(trades []domain.UserTrade) domain.TradeMetrics {
 			lossCount++
 			sumLoss += profit
 		}
-		if profit > best {
+		if firstTrade || profit > best {
 			best = profit
 		}
-		if profit < worst {
+		if firstTrade || profit < worst {
 			worst = profit
 		}
+		firstTrade = false
 
 		if !trade.EntryTime.IsZero() {
 			totalDuration += 0 // placeholder until exit time available
@@ -388,7 +411,7 @@ func computeRiskMetrics(trades []domain.UserTrade) (domain.RiskMetrics, []domain
 	var returns []float64
 
 	cumProfit := 0.0
-	maxEquity := math.Inf(-1)
+	maxEquity := 0.0
 	peak := 0.0
 	maxDrawdown := 0.0
 	maxDrawdownPct := 0.0
@@ -601,6 +624,9 @@ func ulcerIndex(points []domain.EquityPoint) float64 {
 	for i, p := range points {
 		if i == 0 || p.Balance > peak {
 			peak = p.Balance
+		}
+		if peak == 0 {
+			continue
 		}
 		drawdown := (p.Balance - peak) / peak
 		sum += drawdown * drawdown

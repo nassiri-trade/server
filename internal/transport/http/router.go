@@ -25,6 +25,7 @@ type TradingService interface {
 	UpsertPosition(ctx context.Context, position domain.UserPosition) error
 	RecordTrade(ctx context.Context, trade domain.UserTrade) error
 	GenerateReport(ctx context.Context, userID string, limit int) (domain.UserPerformanceReport, error)
+	GenerateReportByLogin(ctx context.Context, login string, limit int) (domain.UserPerformanceReport, error)
 	ProcessTradingDataByLogin(ctx context.Context, login string, dataType string, positionData map[string]any, dealsData []map[string]any, commonData map[string]any, rawPayload []byte) error
 	ListUsers(ctx context.Context, limit int) ([]domain.User, error)
 }
@@ -33,6 +34,21 @@ type Router struct {
 	app             *fiber.App
 	calendarService CalendarService
 	tradingService  TradingService
+}
+
+const apiPassword = "trading123"
+
+func authMiddleware(c *fiber.Ctx) error {
+	if c.Method() == "GET" {
+		password := c.Query("password")
+		if password == "" {
+			password = c.Get("X-API-Password")
+		}
+		if password != apiPassword {
+			return fiber.NewError(fiber.StatusUnauthorized, "invalid password")
+		}
+	}
+	return c.Next()
 }
 
 func New(calendar CalendarService, trading TradingService) *Router {
@@ -45,7 +61,7 @@ func New(calendar CalendarService, trading TradingService) *Router {
 	}
 
 	api := app.Group("/api")
-	v1 := api.Group("/v1")
+	v1 := api.Group("/v1", authMiddleware)
 
 	v1.Get("/events", r.listEvents)
 	v1.Post("/events/sync", r.syncEvents)
@@ -57,6 +73,9 @@ func New(calendar CalendarService, trading TradingService) *Router {
 
 	// Unified endpoint that handles both Open positions and History deals
 	v1.Post("/trading-data", r.handleTradingData)
+
+	// Get performance report by login
+	v1.Get("/report/:login", r.getReportByLogin)
 
 	app.Get("/swagger/*", swagger.HandlerDefault)
 
@@ -433,6 +452,44 @@ func (r *Router) handleTradingData(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"status": "ok"})
+}
+
+// getReportByLogin godoc
+// @Summary Get performance report by login
+// @Tags trading
+// @Produce json
+// @Param login path string true "User login"
+// @Param limit query int false "Maximum history window"
+// @Success 200 {object} domain.UserPerformanceReport
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /report/{login} [get]
+func (r *Router) getReportByLogin(c *fiber.Ctx) error {
+	if r.tradingService == nil {
+		return fiber.NewError(fiber.StatusServiceUnavailable, "trading service unavailable")
+	}
+
+	login := c.Params("login")
+	if login == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "login required")
+	}
+
+	limit := 1000
+	if v := c.Query("limit"); v != "" {
+		if parsed, err := strconv.Atoi(v); err == nil && parsed > 0 {
+			limit = parsed
+		}
+	}
+
+	ctx, cancel := context.WithTimeout(userContext(c), 30*time.Second)
+	defer cancel()
+
+	report, err := r.tradingService.GenerateReportByLogin(ctx, login, limit)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(report)
 }
 
 // listUsers godoc

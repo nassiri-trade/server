@@ -13,7 +13,7 @@ type CalendarEvent struct {
 	Date      time.Time
 	Currency  string
 	Impact    string
-	Detail    string
+	Event     string
 	Actual    string
 	Forecast  string
 	Previous  string
@@ -41,7 +41,7 @@ func (e CalendarEvent) WithHash() CalendarEvent {
 		return e
 	}
 
-	e.Hash = IdentityDigest(e.Date, e.Currency, e.Detail)
+	e.Hash = IdentityDigest(e.Date, e.Currency, e.Event)
 	return e
 }
 

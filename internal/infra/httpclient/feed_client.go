@@ -76,7 +76,7 @@ func (f *ForexFactoryFeed) FetchEvents(ctx context.Context) ([]domain.CalendarEv
 			Date:      tsUTC,
 			Currency:  strings.TrimSpace(item.Country),
 			Impact:    strings.TrimSpace(item.Impact),
-			Detail:    strings.TrimSpace(item.Title),
+			Event:     strings.TrimSpace(item.Title),
 			Actual:    strings.TrimSpace(item.Actual),
 			Forecast:  strings.TrimSpace(item.Forecast),
 			Previous:  strings.TrimSpace(item.Previous),

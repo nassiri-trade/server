@@ -32,7 +32,7 @@ func (r *GormUserRepository) UpsertUser(ctx context.Context, user domain.User) e
 		"server":     gorm.Expr("COALESCE(EXCLUDED.server, users.server)"),
 		"broker":     gorm.Expr("COALESCE(EXCLUDED.broker, users.broker)"),
 		"metadata":   gorm.Expr("COALESCE(EXCLUDED.metadata, users.metadata)"),
-		"last_seen":  gorm.Expr("MAX(EXCLUDED.last_seen, users.last_seen)"),
+		"last_seen":  gorm.Expr("GREATEST(EXCLUDED.last_seen, users.last_seen)"),
 		"updated_at": gorm.Expr("CURRENT_TIMESTAMP"),
 	})
 

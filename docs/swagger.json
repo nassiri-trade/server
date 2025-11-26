@@ -99,6 +99,58 @@
                 }
             }
         },
+        "/report/{login}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "trading"
+                ],
+                "summary": "Get performance report by login",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User login",
+                        "name": "login",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Maximum history window",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.UserPerformanceReport"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/trading-data": {
             "post": {
                 "consumes": [
@@ -383,7 +435,7 @@
                 "date": {
                     "type": "string"
                 },
-                "detail": {
+                "event": {
                     "type": "string"
                 },
                 "forecast": {
@@ -410,7 +462,8 @@
             "type": "object",
             "properties": {
                 "balance": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "time": {
                     "type": "string"
@@ -421,16 +474,20 @@
             "type": "object",
             "properties": {
                 "averageExposureTime": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "averageLeverage": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "exposureRatio": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "maxExposureTime": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 }
             }
         },
@@ -460,49 +517,64 @@
             "type": "object",
             "properties": {
                 "averageDownsideRisk": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "calmarRatio": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "conditionalVaR95": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "downsideDeviation": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "kurtosis": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "maxDrawdown": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "maxDrawdownPercent": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "recoveryFactor": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "sharpeRatio": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "skewness": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "sortinoRatio": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "stability": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "ulcerIndex": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "valueAtRisk95": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "volatility": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 }
             }
         },
@@ -510,43 +582,53 @@
             "type": "object",
             "properties": {
                 "averageDurationSec": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "averageLoss": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "averageRMultiple": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "averageWin": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "bestTrade": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "expectancy": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "losingTrades": {
                     "type": "integer"
                 },
                 "payoffRatio": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "profitFactor": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "totalTrades": {
                     "type": "integer"
                 },
                 "winRate": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "winningTrades": {
                     "type": "integer"
                 },
                 "worstTrade": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 }
             }
         },
@@ -568,7 +650,8 @@
                 "metadata": {
                     "type": "array",
                     "items": {
-                        "type": "integer"
+                        "type": "integer",
+                        "format": "int32"
                     }
                 },
                 "name": {
@@ -628,19 +711,22 @@
                     }
                 },
                 "realizedProfit": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "riskMetrics": {
                     "$ref": "#/definitions/domain.RiskMetrics"
                 },
                 "totalReturnPercent": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "tradeMetrics": {
                     "$ref": "#/definitions/domain.TradeMetrics"
                 },
                 "unrealizedProfit": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "userID": {
                     "type": "string"
@@ -657,7 +743,8 @@
                     "type": "string"
                 },
                 "balance": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "brokerName": {
                     "type": "string"
@@ -672,7 +759,8 @@
                     "type": "string"
                 },
                 "entryPrice": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "entryTime": {
                     "type": "string"
@@ -681,25 +769,29 @@
                     "type": "string"
                 },
                 "magic": {
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "platform": {
                     "type": "string"
                 },
                 "profit": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "rawPayload": {
                     "type": "array",
                     "items": {
-                        "type": "integer"
+                        "type": "integer",
+                        "format": "int32"
                     }
                 },
                 "reason": {
                     "type": "string"
                 },
                 "riskPercent": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "side": {
                     "$ref": "#/definitions/domain.PositionSide"
@@ -708,25 +800,31 @@
                     "$ref": "#/definitions/domain.PositionStatus"
                 },
                 "stopLoss": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "symbol": {
                     "type": "string"
                 },
                 "takeProfit": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "tickSize": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "tickValue": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "ticket": {
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "unrealizedPL": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "updatedAt": {
                     "type": "string"
@@ -735,7 +833,8 @@
                     "type": "string"
                 },
                 "volume": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 }
             }
         },
@@ -749,7 +848,8 @@
                     "type": "string"
                 },
                 "entryPrice": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "entryTime": {
                     "type": "string"
@@ -758,49 +858,59 @@
                     "type": "string"
                 },
                 "magic": {
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "platform": {
                     "type": "string"
                 },
                 "positionTicket": {
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "profit": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "rawPayload": {
                     "type": "array",
                     "items": {
-                        "type": "integer"
+                        "type": "integer",
+                        "format": "int32"
                     }
                 },
                 "reason": {
                     "type": "string"
                 },
                 "riskPercent": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "side": {
                     "type": "string"
                 },
                 "stopLoss": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "symbol": {
                     "type": "string"
                 },
                 "takeProfit": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "tickSize": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "tickValue": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "ticket": {
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "updatedAt": {
                     "type": "string"
@@ -809,7 +919,8 @@
                     "type": "string"
                 },
                 "volume": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 }
             }
         },

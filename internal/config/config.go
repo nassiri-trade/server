@@ -24,11 +24,16 @@ type SchedulerConfig struct {
 	Interval time.Duration
 }
 
+type LoggingConfig struct {
+	Level string
+}
+
 type AppConfig struct {
 	Server    ServerConfig
 	Database  DatabaseConfig
 	Feed      FeedConfig
 	Scheduler SchedulerConfig
+	Logging   LoggingConfig
 }
 
 func Load() (*AppConfig, error) {
@@ -36,10 +41,11 @@ func Load() (*AppConfig, error) {
 
 	viper.AutomaticEnv()
 
-	viper.SetDefault("SERVER_PORT", "3000")
-	viper.SetDefault("DATABASE_DSN", "data/forex.db")
+	viper.SetDefault("SERVER_PORT", "5000")
+	viper.SetDefault("DATABASE_DSN", "postgres://trading_user:trading_password@127.0.0.1:5432/trading_db?sslmode=disable")
 	viper.SetDefault("CALENDAR_FEED_URL", "https://nfs.faireconomy.media/ff_calendar_thisweek.json")
 	viper.SetDefault("SCHEDULER_INTERVAL", "1h")
+	viper.SetDefault("LOG_LEVEL", "info")
 
 	interval, err := time.ParseDuration(viper.GetString("SCHEDULER_INTERVAL"))
 	if err != nil {
@@ -58,6 +64,9 @@ func Load() (*AppConfig, error) {
 		},
 		Scheduler: SchedulerConfig{
 			Interval: interval,
+		},
+		Logging: LoggingConfig{
+			Level: viper.GetString("LOG_LEVEL"),
 		},
 	}
 

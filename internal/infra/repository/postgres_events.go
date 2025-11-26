@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
@@ -27,6 +28,8 @@ func (r *GormEventRepository) UpsertEvents(ctx context.Context, events []domain.
 		return nil
 	}
 
+	log.Debug().Int("count", len(events)).Msg("upserting calendar events")
+
 	models := make([]CalendarEventModel, len(events))
 	for i, ev := range events {
 		models[i] = toCalendarEventModel(ev)
@@ -44,12 +47,20 @@ func (r *GormEventRepository) UpsertEvents(ctx context.Context, events []domain.
 		"updated_at": gorm.Expr("CURRENT_TIMESTAMP"),
 	})
 
-	return r.db.WithContext(ctx).
+	err := r.db.WithContext(ctx).
 		Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "event_hash"}},
 			DoUpdates: assignments,
 		}).
 		Create(&models).Error
+
+	if err != nil {
+		log.Error().Err(err).Int("count", len(events)).Msg("failed to upsert calendar events")
+	} else {
+		log.Debug().Int("count", len(events)).Msg("calendar events upserted successfully")
+	}
+
+	return err
 }
 
 func (r *GormEventRepository) ListEvents(ctx context.Context, opts domain.ListEventsOptions) ([]domain.CalendarEvent, error) {

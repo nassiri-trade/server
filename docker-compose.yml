@@ -1,16 +1,34 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    network_mode: host
+    environment:
+      POSTGRES_USER: trading_user
+      POSTGRES_PASSWORD: trading_password
+      POSTGRES_DB: trading_db
+      PGPORT: "5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trading_user -d trading_db -h localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   app:
     build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
       SERVER_PORT: "3000"
-      DATABASE_DSN: /app/data/forex.db
+      DATABASE_DSN: "postgres://trading_user:trading_password@postgres:5432/trading_db?sslmode=disable"
       CALENDAR_FEED_URL: https://nfs.faireconomy.media/ff_calendar_thisweek.json
       SCHEDULER_INTERVAL: 1h
+      LOG_LEVEL: info
     ports:
       - "3000:3000"
-    volumes:
-      - sqlite_data:/app/data
 
 volumes:
-  sqlite_data:
+  postgres_data:
 

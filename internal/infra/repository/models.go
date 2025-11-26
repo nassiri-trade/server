@@ -36,7 +36,7 @@ func toCalendarEventModel(ev domain.CalendarEvent) CalendarEventModel {
 		Date:      ev.Date,
 		Currency:  ev.Currency,
 		Impact:    ev.Impact,
-		Detail:    ev.Detail,
+		Detail:    ev.Event,
 		Actual:    ev.Actual,
 		Forecast:  ev.Forecast,
 		Previous:  ev.Previous,
@@ -50,7 +50,7 @@ func (m CalendarEventModel) toDomain() domain.CalendarEvent {
 		Date:      m.Date,
 		Currency:  m.Currency,
 		Impact:    m.Impact,
-		Detail:    m.Detail,
+		Event:     m.Detail,
 		Actual:    m.Actual,
 		Forecast:  m.Forecast,
 		Previous:  m.Previous,
@@ -210,7 +210,7 @@ func toUserTradeModel(trade domain.UserTrade) UserTradeModel {
 		Comment:        stringPointerOrNil(trade.Comment),
 		RawPayload:     jsonOrEmpty(trade.RawPayload),
 	}
-}
+	}
 
 func (m UserTradeModel) toDomain() domain.UserTrade {
 	return domain.UserTrade{
