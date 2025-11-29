@@ -603,12 +603,19 @@ func (r *Router) getReportByLogin(c *fiber.Ctx) error {
 	return c.JSON(report)
 }
 
+type UserResponse struct {
+	Name     string `json:"name"`
+	Login    string `json:"login"`
+	Platform string `json:"platform"`
+	Broker   string `json:"broker"`
+}
+
 // listUsers godoc
 // @Summary List users
 // @Tags users
 // @Produce json
 // @Param limit query int false "Maximum number of users"
-// @Success 200 {array} domain.User
+// @Success 200 {array} http.UserResponse
 // @Failure 500 {object} map[string]string
 // @Router /users [get]
 func (r *Router) listUsers(c *fiber.Ctx) error {
@@ -631,7 +638,18 @@ func (r *Router) listUsers(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	return c.JSON(users)
+	// Map domain users to response DTOs with only required fields
+	response := make([]UserResponse, len(users))
+	for i, user := range users {
+		response[i] = UserResponse{
+			Name:     user.Name,
+			Login:    user.Login,
+			Platform: user.Platform,
+			Broker:   user.Broker,
+		}
+	}
+
+	return c.JSON(response)
 }
 
 func decodePositionPayload(userID string, payload map[string]any, raw []byte) (domain.UserPosition, error) {
