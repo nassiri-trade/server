@@ -13,6 +13,7 @@ import (
 	swagger "github.com/gofiber/swagger"
 
 	"trading_server/internal/domain"
+	applogger "trading_server/internal/infra/logger"
 	"trading_server/internal/usecase"
 )
 
@@ -45,6 +46,100 @@ type Router struct {
 
 const apiPassword = "trading123"
 
+func requestLoggingMiddleware(c *fiber.Ctx) error {
+	start := time.Now()
+
+	// Read request body (this is safe in Fiber - it caches the body)
+	body := c.Body()
+	var bodyStr string
+
+	if len(body) == 0 {
+		bodyStr = "(empty)"
+	} else {
+		// Limit body size for logging (10KB max)
+		maxBodySize := 10000
+		bodyToLog := body
+		truncated := false
+		if len(body) > maxBodySize {
+			bodyToLog = body[:maxBodySize]
+			truncated = true
+		}
+
+		// Try to parse as JSON for pretty printing
+		var bodyJSON interface{}
+		if err := json.Unmarshal(bodyToLog, &bodyJSON); err == nil {
+			// Successfully parsed as JSON - format it nicely
+			if prettyJSON, err := json.MarshalIndent(bodyJSON, "", "  "); err == nil {
+				bodyStr = string(prettyJSON)
+				if truncated {
+					bodyStr += "\n... (truncated)"
+				}
+			} else {
+				bodyStr = string(bodyToLog)
+				if truncated {
+					bodyStr += "... (truncated)"
+				}
+			}
+		} else {
+			// Not JSON, use as-is
+			bodyStr = string(bodyToLog)
+			if truncated {
+				bodyStr += "... (truncated)"
+			}
+		}
+	}
+
+	// Build headers map for logging
+	headers := make(map[string]string)
+	c.Request().Header.VisitAll(func(key, value []byte) {
+		keyStr := string(key)
+		// Skip sensitive headers or very long headers
+		if strings.ToLower(keyStr) == "authorization" || strings.ToLower(keyStr) == "cookie" {
+			headers[keyStr] = "(hidden)"
+		} else {
+			valStr := string(value)
+			if len(valStr) > 200 {
+				valStr = valStr[:200] + "... (truncated)"
+			}
+			headers[keyStr] = valStr
+		}
+	})
+
+	// Log request details
+	applogger.Logger.Info().
+		Str("method", c.Method()).
+		Str("path", c.Path()).
+		Str("original_url", c.OriginalURL()).
+		Str("ip", c.IP()).
+		Str("user_agent", c.Get("User-Agent")).
+		Str("content_type", c.Get("Content-Type")).
+		Interface("headers", headers).
+		Str("body", bodyStr).
+		Msg("Incoming request")
+
+	// Continue to next handler
+	err := c.Next()
+
+	// Log response details
+	duration := time.Since(start)
+	statusCode := c.Response().StatusCode()
+
+	logEvent := applogger.Logger.Info().
+		Str("method", c.Method()).
+		Str("path", c.Path()).
+		Int("status", statusCode).
+		Dur("duration", duration).
+		Float64("duration_ms", float64(duration.Nanoseconds())/1e6)
+
+	if err != nil {
+		logEvent.Err(err).Msg("Request completed with error")
+	} else {
+		logEvent.Msg("Request completed successfully")
+	}
+
+	return err
+}
+
 func authMiddleware(c *fiber.Ctx) error {
 	// if c.Method() == "GET" {
 	// 	password := c.Query("password")
@@ -67,6 +162,9 @@ func New(calendar CalendarService, trading TradingService, passkey PasskeyServic
 		tradingService:  trading,
 		passkeyService:  passkey,
 	}
+
+	// Apply request logging middleware to all routes
+	app.Use(requestLoggingMiddleware)
 
 	api := app.Group("/api")
 	v1 := api.Group("/v1", authMiddleware)
@@ -805,5 +903,5 @@ func (r *Router) passkeyExists(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	return c.JSON(fiber.Map{"exists": exists})
+	return c.JSON(exists)
 }
