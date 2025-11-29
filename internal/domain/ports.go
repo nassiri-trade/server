@@ -34,3 +34,9 @@ type UserRepository interface {
 	GetUserByLogin(ctx context.Context, login string) (User, error)
 	ListUsers(ctx context.Context, limit int) ([]User, error)
 }
+
+type PasskeyRepository interface {
+	AddPasskey(ctx context.Context, passkey Passkey) error
+	UpdatePasskeyStatus(ctx context.Context, passkeyID string, enabled bool) error
+	PasskeyExists(ctx context.Context, passkeyID string) (bool, error)
+}

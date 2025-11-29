@@ -47,7 +47,7 @@ func toCalendarEventModel(ev domain.CalendarEvent) CalendarEventModel {
 func (m CalendarEventModel) toDomain() domain.CalendarEvent {
 	return domain.CalendarEvent{
 		Hash:      m.Hash,
-		Date:      m.Date,
+		Date:      m.Date.UTC(),
 		Currency:  m.Currency,
 		Impact:    m.Impact,
 		Event:     m.Detail,
@@ -55,8 +55,8 @@ func (m CalendarEventModel) toDomain() domain.CalendarEvent {
 		Forecast:  m.Forecast,
 		Previous:  m.Previous,
 		SourceURL: m.SourceURL,
-		CreatedAt: m.CreatedAt,
-		UpdatedAt: m.UpdatedAt,
+		CreatedAt: m.CreatedAt.UTC(),
+		UpdatedAt: m.UpdatedAt.UTC(),
 	}
 }
 
@@ -210,7 +210,7 @@ func toUserTradeModel(trade domain.UserTrade) UserTradeModel {
 		Comment:        stringPointerOrNil(trade.Comment),
 		RawPayload:     jsonOrEmpty(trade.RawPayload),
 	}
-	}
+}
 
 func (m UserTradeModel) toDomain() domain.UserTrade {
 	return domain.UserTrade{
@@ -377,4 +377,34 @@ func copyJSON(data datatypes.JSON) []byte {
 	cpy := make([]byte, len(data))
 	copy(cpy, data)
 	return cpy
+}
+
+type PasskeyModel struct {
+	ID        int64     `gorm:"column:id;primaryKey;autoIncrement"`
+	PasskeyID string    `gorm:"column:passkey_id;uniqueIndex;not null"`
+	Enabled   bool      `gorm:"column:enabled;not null;default:true"`
+	CreatedAt time.Time `gorm:"column:created_at;autoCreateTime"`
+	UpdatedAt time.Time `gorm:"column:updated_at;autoUpdateTime"`
+}
+
+func (PasskeyModel) TableName() string {
+	return "passkeys"
+}
+
+func toPasskeyModel(passkey domain.Passkey) PasskeyModel {
+	return PasskeyModel{
+		ID:        passkey.ID,
+		PasskeyID: passkey.PasskeyID,
+		Enabled:   passkey.Enabled,
+	}
+}
+
+func (m PasskeyModel) toDomain() domain.Passkey {
+	return domain.Passkey{
+		ID:        m.ID,
+		PasskeyID: m.PasskeyID,
+		Enabled:   m.Enabled,
+		CreatedAt: m.CreatedAt.UTC(),
+		UpdatedAt: m.UpdatedAt.UTC(),
+	}
 }

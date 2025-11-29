@@ -96,9 +96,19 @@ func main() {
 	if err != nil {
 		logger.Fatal().Err(err).Msg("init trading service")
 	}
+
+	passkeyRepo, err := repository.NewGormPasskeyRepository(gormDB)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("init passkey repository")
+	}
+	passkeyService, err := usecase.NewPasskeyService(passkeyRepo)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("init passkey service")
+	}
+
 	logger.Info().Msg("all services initialized")
 
-	router := httptransport.New(service, tradingService)
+	router := httptransport.New(service, tradingService, passkeyService)
 
 	logger.Info().Dur("interval", cfg.Scheduler.Interval).Msg("initializing scheduler")
 	scheduler, err := gocron.NewScheduler()

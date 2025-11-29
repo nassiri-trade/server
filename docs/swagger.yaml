@@ -354,6 +354,12 @@ definitions:
         format: float64
         type: number
     type: object
+  http.AddPasskeyRequest:
+    properties:
+      passkey_id:
+        example: abc123xyz789
+        type: string
+    type: object
   http.PositionRequest:
     properties:
       balance:
@@ -472,6 +478,12 @@ definitions:
           trades; any other value is treated as a live position snapshot.
         type: string
     type: object
+  http.UpdatePasskeyStatusRequest:
+    properties:
+      enabled:
+        example: true
+        type: boolean
+    type: object
   http.positionPayload:
     properties:
       comment:
@@ -573,6 +585,119 @@ paths:
       summary: Trigger a calendar sync
       tags:
       - calendar
+  /passkeys:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Passkey payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/http.AddPasskeyRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Add a passkey to the database
+      tags:
+      - passkeys
+  /passkeys/{passkey_id}/exists:
+    get:
+      parameters:
+      - description: Passkey ID
+        in: path
+        name: passkey_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: boolean
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Check if a passkey exists in the database
+      tags:
+      - passkeys
+  /passkeys/{passkey_id}/status:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Passkey ID
+        in: path
+        name: passkey_id
+        required: true
+        type: string
+      - description: Status update payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/http.UpdatePasskeyStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update passkey status (enable/disable)
+      tags:
+      - passkeys
   /report/{login}:
     get:
       parameters:

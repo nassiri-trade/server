@@ -154,3 +154,11 @@ type User struct {
 	Created  time.Time
 	Updated  time.Time
 }
+
+type Passkey struct {
+	ID        int64
+	PasskeyID string
+	Enabled   bool
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}

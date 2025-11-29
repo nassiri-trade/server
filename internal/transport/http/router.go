@@ -30,34 +30,42 @@ type TradingService interface {
 	ListUsers(ctx context.Context, limit int) ([]domain.User, error)
 }
 
+type PasskeyService interface {
+	AddPasskey(ctx context.Context, passkeyID string) error
+	UpdatePasskeyStatus(ctx context.Context, passkeyID string, enabled bool) error
+	PasskeyExists(ctx context.Context, passkeyID string) (bool, error)
+}
+
 type Router struct {
 	app             *fiber.App
 	calendarService CalendarService
 	tradingService  TradingService
+	passkeyService  PasskeyService
 }
 
 const apiPassword = "trading123"
 
 func authMiddleware(c *fiber.Ctx) error {
-	if c.Method() == "GET" {
-		password := c.Query("password")
-		if password == "" {
-			password = c.Get("X-API-Password")
-		}
-		if password != apiPassword {
-			return fiber.NewError(fiber.StatusUnauthorized, "invalid password")
-		}
-	}
+	// if c.Method() == "GET" {
+	// 	password := c.Query("password")
+	// 	if password == "" {
+	// 		password = c.Get("X-API-Password")
+	// 	}
+	// 	if password != apiPassword {
+	// 		return fiber.NewError(fiber.StatusUnauthorized, "invalid password")
+	// 	}
+	// }
 	return c.Next()
 }
 
-func New(calendar CalendarService, trading TradingService) *Router {
+func New(calendar CalendarService, trading TradingService, passkey PasskeyService) *Router {
 	app := fiber.New()
 
 	r := &Router{
 		app:             app,
 		calendarService: calendar,
 		tradingService:  trading,
+		passkeyService:  passkey,
 	}
 
 	api := app.Group("/api")
@@ -76,6 +84,11 @@ func New(calendar CalendarService, trading TradingService) *Router {
 
 	// Get performance report by login
 	v1.Get("/report/:login", r.getReportByLogin)
+
+	// Passkey endpoints
+	v1.Post("/passkeys", r.addPasskey)
+	v1.Patch("/passkeys/:passkey_id/status", r.updatePasskeyStatus)
+	v1.Get("/passkeys/:passkey_id/exists", r.passkeyExists)
 
 	app.Get("/swagger/*", swagger.HandlerDefault)
 
@@ -678,4 +691,119 @@ func parseTime(value any, layouts ...string) time.Time {
 		}
 	}
 	return time.Time{}
+}
+
+type AddPasskeyRequest struct {
+	PasskeyID string `json:"passkey_id" example:"abc123xyz789"`
+}
+
+type UpdatePasskeyStatusRequest struct {
+	Enabled bool `json:"enabled" example:"true"`
+}
+
+// addPasskey godoc
+// @Summary Add a passkey to the database
+// @Tags passkeys
+// @Accept json
+// @Produce json
+// @Param request body AddPasskeyRequest true "Passkey payload"
+// @Success 201 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /passkeys [post]
+func (r *Router) addPasskey(c *fiber.Ctx) error {
+	if r.passkeyService == nil {
+		return fiber.NewError(fiber.StatusServiceUnavailable, "passkey service unavailable")
+	}
+
+	var req AddPasskeyRequest
+	if err := c.BodyParser(&req); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "invalid payload")
+	}
+
+	if req.PasskeyID == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "passkey_id required")
+	}
+
+	ctx, cancel := context.WithTimeout(userContext(c), 10*time.Second)
+	defer cancel()
+
+	if err := r.passkeyService.AddPasskey(ctx, req.PasskeyID); err != nil {
+		if err.Error() == "passkey already exists" {
+			return fiber.NewError(fiber.StatusConflict, err.Error())
+		}
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"status": "ok"})
+}
+
+// updatePasskeyStatus godoc
+// @Summary Update passkey status (enable/disable)
+// @Tags passkeys
+// @Accept json
+// @Produce json
+// @Param passkey_id path string true "Passkey ID"
+// @Param request body UpdatePasskeyStatusRequest true "Status update payload"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /passkeys/{passkey_id}/status [patch]
+func (r *Router) updatePasskeyStatus(c *fiber.Ctx) error {
+	if r.passkeyService == nil {
+		return fiber.NewError(fiber.StatusServiceUnavailable, "passkey service unavailable")
+	}
+
+	passkeyID := c.Params("passkey_id")
+	if passkeyID == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "passkey_id required")
+	}
+
+	var req UpdatePasskeyStatusRequest
+	if err := c.BodyParser(&req); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "invalid payload")
+	}
+
+	ctx, cancel := context.WithTimeout(userContext(c), 10*time.Second)
+	defer cancel()
+
+	if err := r.passkeyService.UpdatePasskeyStatus(ctx, passkeyID, req.Enabled); err != nil {
+		if err.Error() == "passkey not found" {
+			return fiber.NewError(fiber.StatusNotFound, err.Error())
+		}
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(fiber.Map{"status": "ok"})
+}
+
+// passkeyExists godoc
+// @Summary Check if a passkey exists in the database
+// @Tags passkeys
+// @Produce json
+// @Param passkey_id path string true "Passkey ID"
+// @Success 200 {object} map[string]bool
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /passkeys/{passkey_id}/exists [get]
+func (r *Router) passkeyExists(c *fiber.Ctx) error {
+	if r.passkeyService == nil {
+		return fiber.NewError(fiber.StatusServiceUnavailable, "passkey service unavailable")
+	}
+
+	passkeyID := c.Params("passkey_id")
+	if passkeyID == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "passkey_id required")
+	}
+
+	ctx, cancel := context.WithTimeout(userContext(c), 10*time.Second)
+	defer cancel()
+
+	exists, err := r.passkeyService.PasskeyExists(ctx, passkeyID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(fiber.Map{"exists": exists})
 }

@@ -16,6 +16,7 @@ func ApplyMigrations(ctx context.Context, db *gorm.DB, _ string) error {
 		&repository.UserPositionModel{},
 		&repository.UserPositionSnapshotModel{},
 		&repository.UserTradeModel{},
+		&repository.PasskeyModel{},
 	); err != nil {
 		return fmt.Errorf("auto migrate: %w", err)
 	}
